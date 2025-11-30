@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/anthropics/goclode/internal/core"
-	"github.com/anthropics/goclode/internal/ui"
+	"github.com/hazyhaar/GoClode/internal/core"
+	"github.com/hazyhaar/GoClode/internal/ui"
 )
 
 const version = "0.1.0"
@@ -39,7 +39,7 @@ Environment Variables:
   CEREBRAS_API_KEY           Cerebras API key
   OPENROUTER_API_KEY         OpenRouter API key (optional)
 
-For more info: https://github.com/anthropics/goclode
+For more info: https://github.com/hazyhaar/GoClode
 `)
 	}
 

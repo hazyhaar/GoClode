@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/anthropics/goclode/internal/core"
+	"github.com/hazyhaar/GoClode/internal/core"
 )
 
 func setupTestDB(t *testing.T) *core.Engine {

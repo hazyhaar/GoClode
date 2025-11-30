@@ -29,7 +29,7 @@ func NewCerebrasProvider(config *ProviderConfig) *CerebrasProvider {
 			Name:         "Cerebras",
 			BaseURL:      "https://api.cerebras.ai/v1",
 			APIKeyEnv:    "CEREBRAS_API_KEY",
-			DefaultModel: "llama-3.3-70b",
+			DefaultModel: "zai-glm-4.6",
 		}
 	}
 
@@ -55,9 +55,7 @@ func (p *CerebrasProvider) Name() string {
 // Models returns available models
 func (p *CerebrasProvider) Models() []string {
 	return []string{
-		"llama-3.3-70b",
-		"llama3.1-8b",
-		"llama3.1-70b",
+		"zai-glm-4.6",
 	}
 }
 
@@ -68,11 +66,12 @@ func (p *CerebrasProvider) IsAvailable() bool {
 
 // cerebrasRequest is the Cerebras API request format
 type cerebrasRequest struct {
-	Model       string    `json:"model"`
-	Messages    []Message `json:"messages"`
-	Temperature float64   `json:"temperature,omitempty"`
-	MaxTokens   int       `json:"max_tokens,omitempty"`
-	Stream      bool      `json:"stream"`
+	Model            string    `json:"model"`
+	Messages         []Message `json:"messages"`
+	Temperature      float64   `json:"temperature,omitempty"`
+	MaxTokens        int       `json:"max_tokens,omitempty"`
+	Stream           bool      `json:"stream"`
+	DisableReasoning *bool     `json:"disable_reasoning,omitempty"` // zai-glm-4.6: false=reasoning enabled
 }
 
 // cerebrasResponse is the Cerebras API response format
@@ -84,8 +83,9 @@ type cerebrasResponse struct {
 	Choices []struct {
 		Index   int `json:"index"`
 		Message struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
+			Role      string `json:"role"`
+			Content   string `json:"content"`
+			Reasoning string `json:"reasoning"` // zai-glm-4.6 uses reasoning field
 		} `json:"message"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
@@ -105,8 +105,9 @@ type cerebrasStreamChunk struct {
 	Choices []struct {
 		Index int `json:"index"`
 		Delta struct {
-			Role    string `json:"role,omitempty"`
-			Content string `json:"content,omitempty"`
+			Role      string `json:"role,omitempty"`
+			Content   string `json:"content,omitempty"`
+			Reasoning string `json:"reasoning,omitempty"` // zai-glm-4.6 uses reasoning
 		} `json:"delta"`
 		FinishReason string `json:"finish_reason,omitempty"`
 	} `json:"choices"`
@@ -172,7 +173,11 @@ func (p *CerebrasProvider) Generate(ctx context.Context, req *Request) (*Respons
 
 	content := ""
 	if len(ceres.Choices) > 0 {
+		// zai-glm-4.6 uses reasoning field, others use content
 		content = ceres.Choices[0].Message.Content
+		if content == "" {
+			content = ceres.Choices[0].Message.Reasoning
+		}
 	}
 
 	return &Response{
@@ -276,9 +281,12 @@ func (p *CerebrasProvider) Stream(ctx context.Context, req *Request) (<-chan Str
 				continue
 			}
 
-			// Extract content delta
+			// Extract content delta (zai-glm-4.6 uses reasoning, others use content)
 			if len(chunk.Choices) > 0 {
 				delta := chunk.Choices[0].Delta.Content
+				if delta == "" {
+					delta = chunk.Choices[0].Delta.Reasoning
+				}
 				if delta != "" {
 					ch <- StreamChunk{Delta: delta}
 				}

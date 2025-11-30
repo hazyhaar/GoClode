@@ -59,8 +59,6 @@ func (r *Registry) reload() error {
 		switch cfg.ID {
 		case "cerebras":
 			r.providers[cfg.ID] = NewCerebrasProvider(&cfg)
-		case "openrouter":
-			r.providers[cfg.ID] = NewOpenRouterProvider(&cfg)
 		default:
 			// Try to create a generic OpenAI-compatible provider
 			r.providers[cfg.ID] = NewGenericProvider(&cfg)

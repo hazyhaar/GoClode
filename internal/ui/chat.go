@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"regexp"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -33,7 +34,8 @@ type Chat struct {
 	cancel  context.CancelFunc
 
 	// State
-	debugMode bool
+	debugMode    bool
+	shutdownOnce sync.Once
 }
 
 // NewChat creates a new chat interface
@@ -672,16 +674,18 @@ func (c *Chat) printHelp() {
 
 // shutdown gracefully shuts down the chat
 func (c *Chat) shutdown() {
-	fmt.Println("\n\033[33m👋 Goodbye!\033[0m")
+	c.shutdownOnce.Do(func() {
+		fmt.Println("\n\033[33m👋 Goodbye!\033[0m")
 
-	// Emit shutdown event
-	c.modules.Emit("session_end", map[string]interface{}{
-		"session_id": c.session.Current(),
+		// Emit shutdown event
+		c.modules.Emit("session_end", map[string]interface{}{
+			"session_id": c.session.Current(),
+		})
+
+		c.cancel()
+		c.rl.Close()
+		c.engine.Close()
 	})
-
-	c.cancel()
-	c.rl.Close()
-	c.engine.Close()
 }
 
 // Helper functions

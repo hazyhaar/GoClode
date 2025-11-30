@@ -56,7 +56,7 @@ func (m *Manager) Create(providerID string) (*Session, error) {
 	sessionID := uuid.New().String()
 
 	_, err := m.engine.Exec(`
-		INSERT INTO sessions (session_id, provider_current)
+		INSERT INTO sessions (session_id, provider_id)
 		VALUES (?, ?)
 	`, sessionID, providerID)
 	if err != nil {
@@ -232,7 +232,7 @@ func (m *Manager) SetProvider(providerID string) error {
 
 	if m.sessionID != "" {
 		_, err := m.engine.Exec(`
-			UPDATE sessions SET provider_current = ? WHERE session_id = ?
+			UPDATE sessions SET provider_id = ? WHERE session_id = ?
 		`, providerID, m.sessionID)
 		return err
 	}
@@ -284,7 +284,7 @@ func (m *Manager) ListSessions(limit int) ([]Session, error) {
 	rows, err := m.engine.Query(`
 		SELECT session_id, created_at, last_active_at,
 			   COALESCE(git_branch, ''), COALESCE(git_commit_start, ''),
-			   COALESCE(provider_current, 'cerebras'), COALESCE(metadata, '{}')
+			   COALESCE(provider_id, 'cerebras'), COALESCE(metadata, '{}')
 		FROM sessions
 		ORDER BY last_active_at DESC
 		LIMIT ?

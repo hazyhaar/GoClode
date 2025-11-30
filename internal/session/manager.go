@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/goclode/internal/core"
-	"github.com/anthropics/goclode/internal/providers"
+	"github.com/hazyhaar/GoClode/internal/core"
+	"github.com/hazyhaar/GoClode/internal/providers"
 	"github.com/google/uuid"
 )
 

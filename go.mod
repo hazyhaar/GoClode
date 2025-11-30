@@ -1,4 +1,4 @@
-module github.com/anthropics/goclode
+module github.com/hazyhaar/GoClode
 
 go 1.22
 

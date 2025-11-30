@@ -13,10 +13,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anthropics/goclode/internal/core"
-	"github.com/anthropics/goclode/internal/git"
-	"github.com/anthropics/goclode/internal/providers"
-	"github.com/anthropics/goclode/internal/session"
+	"github.com/hazyhaar/GoClode/internal/core"
+	"github.com/hazyhaar/GoClode/internal/git"
+	"github.com/hazyhaar/GoClode/internal/providers"
+	"github.com/hazyhaar/GoClode/internal/session"
 	"github.com/chzyer/readline"
 )
 

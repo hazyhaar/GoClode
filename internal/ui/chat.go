@@ -322,27 +322,74 @@ Be concise and direct.`
 // extractFileChanges extracts file changes from LLM response
 func (c *Chat) extractFileChanges(response string) []FileChange {
 	changes := make([]FileChange, 0)
+	seen := make(map[string]bool)
 
-	// Pattern: **File: path/to/file.ext**
-	// ```language
-	// content
-	// ```
-	pattern := regexp.MustCompile("(?m)\\*\\*File:\\s*([^*]+)\\*\\*\\s*\n```[a-z]*\n([\\s\\S]*?)```")
-	matches := pattern.FindAllStringSubmatch(response, -1)
+	// Find all code blocks with their language
+	codeBlockPattern := regexp.MustCompile("(?s)```([a-z]+)\n(.*?)```")
+	codeBlocks := codeBlockPattern.FindAllStringSubmatchIndex(response, -1)
 
-	for _, match := range matches {
-		if len(match) >= 3 {
-			path := strings.TrimSpace(match[1])
-			content := match[2]
+	// Extension map for languages
+	langToExt := map[string]string{
+		"go": ".go", "python": ".py", "py": ".py", "javascript": ".js", "js": ".js",
+		"typescript": ".ts", "ts": ".ts", "rust": ".rs", "java": ".java",
+		"json": ".json", "yaml": ".yaml", "yml": ".yml", "sql": ".sql",
+		"sh": ".sh", "bash": ".sh", "markdown": ".md", "md": ".md",
+	}
 
-			// Remove trailing newline if present
-			content = strings.TrimSuffix(content, "\n")
+	// Filename patterns to look for before each code block
+	filenamePatterns := []*regexp.Regexp{
+		regexp.MustCompile("`([a-zA-Z0-9_\\-./]+\\.[a-z]+)`"),                          // `filename.ext`
+		regexp.MustCompile("\\*\\*(?:File:?)?\\s*([a-zA-Z0-9_\\-./]+\\.[a-z]+)\\*\\*"), // **File: name**
+		regexp.MustCompile("([a-zA-Z0-9_\\-./]+\\.[a-z]{1,4})\\s*[:：]"),               // filename.ext:
+	}
 
-			changes = append(changes, FileChange{
-				Path:    path,
-				Content: content,
-			})
+	for _, blockIdx := range codeBlocks {
+		if len(blockIdx) < 6 {
+			continue
 		}
+
+		lang := response[blockIdx[2]:blockIdx[3]]
+		content := response[blockIdx[4]:blockIdx[5]]
+
+		// Look for filename in text before this code block (up to 500 chars)
+		searchStart := blockIdx[0] - 500
+		if searchStart < 0 {
+			searchStart = 0
+		}
+		textBefore := response[searchStart:blockIdx[0]]
+
+		var filename string
+		for _, pattern := range filenamePatterns {
+			matches := pattern.FindAllStringSubmatch(textBefore, -1)
+			if len(matches) > 0 {
+				filename = matches[len(matches)-1][1]
+				break
+			}
+		}
+
+		// If no filename found, generate one based on language
+		if filename == "" {
+			ext, ok := langToExt[lang]
+			if !ok {
+				continue
+			}
+			filename = "main" + ext
+		}
+
+		if seen[filename] {
+			continue
+		}
+		seen[filename] = true
+
+		content = strings.TrimSuffix(content, "\n")
+		if strings.TrimSpace(content) == "" {
+			continue
+		}
+
+		changes = append(changes, FileChange{
+			Path:    filename,
+			Content: content,
+		})
 	}
 
 	return changes

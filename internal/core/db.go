@@ -293,8 +293,7 @@ func (e *Engine) initSchema() error {
 
 	-- Default providers
 	INSERT OR IGNORE INTO providers (provider_id, name, base_url, api_key_env, default_model, priority) VALUES
-	('cerebras', 'Cerebras', 'https://api.cerebras.ai/v1', 'CEREBRAS_API_KEY', 'zai-glm-4.6', 1),
-	('openrouter', 'OpenRouter', 'https://openrouter.ai/api/v1', 'OPENROUTER_API_KEY', 'meta-llama/llama-3.1-70b-instruct', 2);
+	('cerebras', 'Cerebras', 'https://api.cerebras.ai/v1', 'CEREBRAS_API_KEY', 'zai-glm-4.6', 1);
 
 	-- Default config
 	INSERT OR IGNORE INTO config (key, value, type, description) VALUES
